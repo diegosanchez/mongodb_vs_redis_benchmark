@@ -1,16 +1,14 @@
+var consts = require('./consts');
 var fs = require('fs');
 var util = require('util');
 
-var ranking_filename = 'ranking.lst';
-var scores_count = 1000000;
+try { fs.unlinkSync( consts.ranking_filename ); } catch (err) {};
 
-try { fs.unlinkSync( ranking_filename ); } xcatch (err) {};
-
-for( var i = 0; i < scores_count; ++i ) {
+for( var i = 0; i < consts.scores_count; ++i ) {
     // ID Ranking | ID User | score 
     var entry = util.format("%s|%s|%d\n", "ranking:1:users", "user_" + i, i );
 
-    fs.appendFileSync( ranking_filename, entry);
+    fs.appendFileSync( consts.ranking_filename, entry);
 
     
 };

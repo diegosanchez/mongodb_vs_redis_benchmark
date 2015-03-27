@@ -9,6 +9,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "mongodb": "^2.0.25"
+    "mongojs": "^0.18.2",
+    "split": "^0.3.3"
   }
 }
