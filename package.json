@@ -1,0 +1,14 @@
+{
+  "name": "Leaderboard",
+  "description": "Comparing MongoDB against Redis Sorted Set",
+  "version": "0.0.1",
+  "author": "Diegos",
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.4.x"
+  },
+  "scripts": {},
+  "dependencies": {
+    "mongodb": "^2.0.25"
+  }
+}
