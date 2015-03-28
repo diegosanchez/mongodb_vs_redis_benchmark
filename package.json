@@ -9,6 +9,7 @@
   },
   "scripts": {},
   "dependencies": {
+    "async": "^0.9.0",
     "mongojs": "^0.18.2",
     "split": "^0.3.3"
   }
