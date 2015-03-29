@@ -1,23 +1,24 @@
 var async = require('async');
 var fs = require('fs');
 var split = require('split');
-var mongojs = require('mongojs');
+var redis = require('redis');
 
 var bench_utils = require('./bench_utils');
 var consts = require('./consts');
 var bench_info = require('./bench_info');
 
-var db = mongojs( 'leaderboard', ['ranking']);
-
-var statistics = bench_info.mongodb;
+var statistics = bench_info.redis;
+var client = redis.createClient();
 
 
 function drop_ranking_collection(next) {
-    db.ranking.drop( function() {
-        console.log( '- collection droped');
+
+    client.del( 'ranking', function(err, replay) {
+        console.log('- ranking key deleted');
         next(null);
-    } );
-};
+    });
+
+}
 
 function count_scores_entries(next) {
     console.log('- counting lines of %s...', consts.ranking_filename)
@@ -36,9 +37,11 @@ function count_scores_entries(next) {
         })
 };
 
+
 function save_entries(next) {
     console.log( '- invoking db.ranking.save for %d records...', statistics.score_entries.count);
     statistics.save_time.counter = statistics.score_entries.count;
+
     fs.createReadStream(consts.ranking_filename)
         .pipe(split())
         .on('data', function(line) {
@@ -49,7 +52,9 @@ function save_entries(next) {
             var fields = line.split('|');
             
             var timer = process.hrtime();
-            db.ranking.save( { user: fields[1], score: Number(fields[2]) }, function(err, doc) {
+
+            client.zadd( [ 'ranking', Number(fields[2]), fields[1]], function(err, data) {
+
                 var elapsed = process.hrtime(timer);
                 statistics.save_time.time += elapsed[0] * 1e9 + elapsed[1];
 
@@ -63,31 +68,20 @@ function save_entries(next) {
         });
 }
 
-function build_index_on_ranking(next) {
-    console.log('- creating index for ranking on score...');
-    db.ranking.createIndex( {score: 1 }, function() {
-        next(null);
-    });
-
-};
-
 function retrieve_user_score(next) {
     statistics.retrieve_user_score.user =
         bench_utils.params( statistics.retrieve_user_score.user, process.argv[2]);
     console.log('- retrieving %s score...', statistics.retrieve_user_score.user);
 
     var timer = process.hrtime();
-    db.ranking.find(
-        { user: statistics.retrieve_user_score.user },  /* query */
-        { score: 1},                                    /* projection */
-        function(err, docs) {
-            var elapsed = process.hrtime(timer);
-            statistics.retrieve_user_score.time += elapsed[0] * 1e9 + elapsed[1];
-            statistics.retrieve_user_score.score = docs[0].score;
 
-            next(null);
-        });
-        
+    client.zscore( ['ranking', statistics.retrieve_user_score.user], function(err, result) {
+        var elapsed = process.hrtime(timer);
+        statistics.retrieve_user_score.time += elapsed[0] * 1e9 + elapsed[1];
+        statistics.retrieve_user_score.score = result;
+
+        next(null);
+    });
 }
 
 function alter_user_score(next) {
@@ -100,44 +94,32 @@ function alter_user_score(next) {
     console.log( '- altering %s score...', statistics.alter_user_score.user);
 
     var timer = process.hrtime();
-    db.ranking.update(
-        { user: statistics.alter_user_score.user },  /* query */
-        { $set:
-          { score: Number(statistics.alter_user_score.new_score_value)}
-        },
-        function(err, docs) {
-            var elapsed = process.hrtime(timer);
-            statistics.alter_user_score.time += elapsed[0] * 1e9 + elapsed[1];
-            
-            next(null);
-        });
+    client.zadd( [ 'ranking', statistics.alter_user_score.new_score_value, statistics.alter_user_score.user], function(err, result) {
+        var elapsed = process.hrtime(timer);
+        statistics.alter_user_score.time += elapsed[0] * 1e9 + elapsed[1];
         
-
+        next(null);
+    });
 }
 
 function retrieve_top_n(next) {
 
     console.log("- retrieving first %d users...", Number(statistics.top_n.n));
-    
+
     var timer = process.hrtime();
-    db.ranking
-        .find( {}, { user: 1, score: 1, _id: 0})
-        .sort( { score: -1 })
-        .limit( Number(statistics.top_n.n), function(err, docs) {
-            var elapsed = process.hrtime(timer);
-            statistics.top_n.time += elapsed[0] * 1e9 + elapsed[1];
+    client.zrevrange( ['ranking', 0, Number(statistics.top_n.n - 1)], function(err, results) {
+        var elapsed = process.hrtime(timer);
+        statistics.top_n.time += elapsed[0] * 1e9 + elapsed[1];
 
-            console.log(docs);
-            next(null);
-        });
-
+        console.log(results);
+        next(null);
+    });
 }
 
 async.series( [
     drop_ranking_collection,
     count_scores_entries,
     save_entries,
-    build_index_on_ranking,
     retrieve_user_score,
     alter_user_score,
     retrieve_top_n
@@ -156,6 +138,4 @@ async.series( [
     console.log("- For those operation where user is a parameter first argument might be specified");
     process.exit(0);
 });
-
-
 
