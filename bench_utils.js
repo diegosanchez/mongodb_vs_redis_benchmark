@@ -38,15 +38,15 @@ exports.show_statistics = function(statistics) {
     console.log( "%s: %d ns (N = %d )", statistics.top_n.desc, statistics.top_n.time, statistics.top_n.n);
     console.log();
     console.log("NODE - MEMORY USAGE");
-    console.log("rss (min,max,avg): (%d, %d, %d) ",
+    console.log("rss (min,max,avg) in bytes: (%d, %d, %d) ",
                 statistics.memory_usage.min_rss,
                 statistics.memory_usage.max_rss,
                 (statistics.memory_usage.min_rss + statistics.memory_usage.max_rss) / 2 );
-    console.log("heapTotal (min,max,avg): (%d, %d, %d) ",
+    console.log("heapTotal (min,max,avg) in bytes: (%d, %d, %d) ",
                 statistics.memory_usage.min_heap_total,
                 statistics.memory_usage.max_heap_total,
                 (statistics.memory_usage.min_heap_total + statistics.memory_usage.max_heap_total) / 2);
-    console.log("heapUsed (min,max,avg): (%d, %d, %d) ",
+    console.log("heapUsed (min,max,avg) in bytes: (%d, %d, %d) ",
                 statistics.memory_usage.min_heap_used,
                 statistics.memory_usage.max_heap_used,
                 (statistics.memory_usage.min_heap_used + statistics.memory_usage.max_heap_used) / 2 );
