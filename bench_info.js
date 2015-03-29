@@ -1,4 +1,13 @@
 var info = {
+    memory_usage: {
+        desc: 'memory usage rss',
+        min_rss: null,
+        max_rss: 0,
+        min_heap_total: null,
+        max_heap_total: 0,
+        min_heap_used: null,
+        max_heap_used: 0
+    },
     score_entries: {
         desc: 'number of records processed',
         count: 0

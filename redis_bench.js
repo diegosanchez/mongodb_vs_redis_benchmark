@@ -116,6 +116,8 @@ function retrieve_top_n(next) {
     });
 }
 
+bench_utils.track_memory_usage(statistics.memory_usage);
+
 async.series( [
     drop_ranking_collection,
     count_scores_entries,
@@ -124,18 +126,19 @@ async.series( [
     alter_user_score,
     retrieve_top_n
 ], function(err, results) {
+    bench_utils.show_statistics(statistics);
     console.log();
-    console.log("STATISTICS:")
-    console.log( "%s: %d", statistics.score_entries.desc, statistics.score_entries.count);
-    console.log( "%s: %d ns", statistics.save_time.desc, statistics.save_time.time );
-    console.log( "%s: %d ns", statistics.retrieve_user_score.desc, statistics.retrieve_user_score.time );
-    console.log( "%s: %d ns", statistics.alter_user_score.desc, statistics.alter_user_score.time );
-    console.log( "%s: %d ns (N = %d )", statistics.top_n.desc, statistics.top_n.time, statistics.top_n.n);
     
-    console.log("");
-    console.log("NOTE");
-    console.log("- Every time is expresed in nanoseconds");
-    console.log("- For those operation where user is a parameter first argument might be specified");
-    process.exit(0);
+    client.info( ['memory'], function(err, results ) {
+        console.log('REDIS - MEMORY USAGE');
+        console.log( results);
+        console.log();
+        bench_utils.show_notes();
+        console.log();
+        process.exit(0);
+    });
+
+
+
 });
 
