@@ -28,24 +28,24 @@ var bench_info = {
         user: 'user_1',
         new_score_value: 59,
         time: 0
+    },
+    top_n: {
+        desc: 'time spent retreaving top N users',
+        n: 100,
+        time: 0
     }
 };
 
 
-function dump_statistics() {
-    console.log( "number of users:", number_of_scores);
-    console.log( "saving time: %d ns", save_time);
-}
-
 function drop_ranking_collection(next) {
     db.ranking.drop( function() {
-        console.log( 'collection droped');
+        console.log( '- collection droped');
         next(null);
     } );
 }
 
 function count_scores_entries(next) {
-    console.log('counting lines of %s...', consts.ranking_filename)
+    console.log('- counting lines of %s...', consts.ranking_filename)
     fs.createReadStream(consts.ranking_filename)
         .pipe(split())
         .on('data', function(line) {
@@ -62,7 +62,7 @@ function count_scores_entries(next) {
 };
 
 function save_entries(next) {
-    console.log( 'invoking db.ranking.save for %d records...', bench_info.score_entries.count);
+    console.log( '- invoking db.ranking.save for %d records...', bench_info.score_entries.count);
     bench_info.save_time.counter = bench_info.score_entries.count;
     fs.createReadStream(consts.ranking_filename)
         .pipe(split())
@@ -74,7 +74,7 @@ function save_entries(next) {
             var fields = line.split('|');
             
             var timer = process.hrtime();
-            db.ranking.save( { user: fields[1], score: fields[2] }, function(err, doc) {
+            db.ranking.save( { user: fields[1], score: Number(fields[2]) }, function(err, doc) {
                 var elapsed = process.hrtime(timer);
                 bench_info.save_time.time += elapsed[0] * 1e9 + elapsed[1];
 
@@ -89,7 +89,7 @@ function save_entries(next) {
 }
 
 function build_index_on_ranking(next) {
-    console.log('creating index for ranking on score...');
+    console.log('- creating index for ranking on score...');
     db.ranking.createIndex( {score: 1 }, function() {
         next(null);
     });
@@ -99,7 +99,7 @@ function build_index_on_ranking(next) {
 function retrieve_user_score(next) {
     bench_info.retrieve_user_score.user =
         params( bench_info.retrieve_user_score.user, process.argv[2]);
-    console.log( 'retrieving %s score...', bench_info.retrieve_user_score.user);
+    console.log('- retrieving %s score...', bench_info.retrieve_user_score.user);
 
     var timer = process.hrtime();
     db.ranking.find(
@@ -122,7 +122,7 @@ function alter_user_score(next) {
     bench_info.alter_user_score.new_score_value =
         params( bench_info.alter_user_score.new_score_value, process.argv[3] );
                 
-    console.log( 'altering %s score...', bench_info.alter_user_score.user);
+    console.log( '- altering %s score...', bench_info.alter_user_score.user);
 
     var timer = process.hrtime();
     db.ranking.update(
@@ -140,18 +140,40 @@ function alter_user_score(next) {
 
 }
 
+function retrieve_top_n(next) {
+
+    console.log("- retrieving first %d users...", Number(bench_info.top_n.n));
+    
+    var timer = process.hrtime();
+    db.ranking
+        .find( {}, { user: 1, score: 1, _id: 0})
+        .sort( { score: -1 })
+        .limit( Number(bench_info.top_n.n), function(err, docs) {
+            var elapsed = process.hrtime(timer);
+            bench_info.top_n.time += elapsed[0] * 1e9 + elapsed[1];
+
+            console.log(docs);
+            next(null);
+        });
+
+}
+
 async.series( [
     drop_ranking_collection,
     count_scores_entries,
     save_entries,
     build_index_on_ranking,
     retrieve_user_score,
-    alter_user_score
+    alter_user_score,
+    retrieve_top_n
 ], function(err, results) {
+    console.log();
+    console.log("STATISTICS:")
     console.log( "%s: %d", bench_info.score_entries.desc, bench_info.score_entries.count);
     console.log( "%s: %d ns", bench_info.save_time.desc, bench_info.save_time.time );
     console.log( "%s: %d ns", bench_info.retrieve_user_score.desc, bench_info.retrieve_user_score.time );
     console.log( "%s: %d ns", bench_info.alter_user_score.desc, bench_info.alter_user_score.time );
+    console.log( "%s: %d ns (N = %d )", bench_info.top_n.desc, bench_info.top_n.time, bench_info.top_n.n);
     
     console.log("");
     console.log("NOTE");
