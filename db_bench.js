@@ -111,8 +111,6 @@ function alter_user_score(next) {
             
             next(null);
         });
-        
-
 }
 
 function retrieve_top_n(next) {
@@ -133,6 +131,37 @@ function retrieve_top_n(next) {
 
 }
 
+function retrieve_ranking(next) {
+    statistics.ranking.user =
+        bench_utils.params(statistics.ranking.user, process.argv[2]);
+
+    var timer = process.hrtime();
+    var ranking = 0;
+    
+    var timer = process.hrtime();
+    db.ranking.findOne( {user: statistics.ranking.user}, {_id:1}, function(err, foundEntry) {
+        db.ranking
+            .find({}, { _id: 1})
+            .sort({ score: -1 })
+            .forEach( function(err,entry) {
+                if ( entry === null)
+                    return;
+
+                console.log(entry._id, foundEntry._id, entry._id.equals(foundEntry._id) );
+                if ( entry._id.equals(foundEntry._id)) {
+                    var elapsed = process.hrtime(timer);
+                    statistics.ranking.rank = ranking;
+                    statistics.ranking.time += elapsed[0] * 1e9 + elapsed[1];
+                    console.log("ranking for user %s: %d", statistics.ranking.user, statistics.ranking.rank);
+                    next(null);
+                }
+
+
+                ranking++;
+            });
+    });
+}
+
 bench_utils.track_memory_usage(statistics.memory_usage);
 
 async.series( [
@@ -142,7 +171,8 @@ async.series( [
     build_index_on_ranking,
     retrieve_user_score,
     alter_user_score,
-    retrieve_top_n
+    retrieve_top_n,
+    retrieve_ranking
 ], function(err, results) {
     bench_utils.show_statistics(statistics);
     bench_utils.show_notes();

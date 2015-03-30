@@ -121,7 +121,7 @@ function retrieve_ranking(next) {
         bench_utils.params(statistics.ranking.user, process.argv[2]);
 
     var timer = process.hrtime();
-    client.zrank( ['ranking', statistics.ranking.user], function(err, results) {
+    client.zrevrank( ['ranking', statistics.ranking.user], function(err, results) {
         var elapsed = process.hrtime(timer);
         statistics.ranking.time += elapsed[0] * 1e9 + elapsed[1];
         statistics.ranking.rank = results;
