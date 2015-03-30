@@ -107,11 +107,25 @@ function retrieve_top_n(next) {
     console.log("- retrieving first %d users...", Number(statistics.top_n.n));
 
     var timer = process.hrtime();
-    client.zrevrange( ['ranking', 0, Number(statistics.top_n.n - 1)], function(err, results) {
+    client.zrevrange( ['ranking', 0, Number(statistics.top_n.n - 1), 'withscores'], function(err, results) {
         var elapsed = process.hrtime(timer);
         statistics.top_n.time += elapsed[0] * 1e9 + elapsed[1];
 
         console.log(results);
+        next(null);
+    });
+}
+
+function retrieve_ranking(next) {
+    statistics.ranking.user =
+        bench_utils.params(statistics.ranking.user, process.argv[2]);
+
+    var timer = process.hrtime();
+    client.zrank( ['ranking', statistics.ranking.user], function(err, results) {
+        var elapsed = process.hrtime(timer);
+        statistics.ranking.time += elapsed[0] * 1e9 + elapsed[1];
+        statistics.ranking.rank = results;
+        console.log("ranking for user %s: %d", statistics.ranking.user, statistics.ranking.rank);
         next(null);
     });
 }
@@ -124,7 +138,8 @@ async.series( [
     save_entries,
     retrieve_user_score,
     alter_user_score,
-    retrieve_top_n
+    retrieve_top_n,
+    retrieve_ranking
 ], function(err, results) {
     bench_utils.show_statistics(statistics);
     console.log();

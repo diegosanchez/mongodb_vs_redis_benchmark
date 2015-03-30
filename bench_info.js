@@ -1,4 +1,10 @@
 var info = {
+    ranking: {
+        desc: 'ranking for user',
+        user: 'user_1',
+        time: 0,
+        rank: 0
+    },
     memory_usage: {
         desc: 'memory usage rss',
         min_rss: null,
