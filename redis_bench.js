@@ -120,12 +120,15 @@ function retrieve_ranking(next) {
     statistics.ranking.user =
         bench_utils.params(statistics.ranking.user, process.argv[2]);
 
+    console.log("- retrieving ranking for %s...", statistics.ranking.user);
+
     var timer = process.hrtime();
     client.zrevrank( ['ranking', statistics.ranking.user], function(err, results) {
         var elapsed = process.hrtime(timer);
         statistics.ranking.time += elapsed[0] * 1e9 + elapsed[1];
         statistics.ranking.rank = results;
-        console.log("ranking for user %s: %d", statistics.ranking.user, statistics.ranking.rank);
+        console.log("ranking for %s is %d", statistics.ranking.user, statistics.ranking.rank);
+
         next(null);
     });
 }

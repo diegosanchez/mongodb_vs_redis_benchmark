@@ -33,7 +33,7 @@ exports.show_statistics = function(statistics) {
     console.log( "%s: %d ns", statistics.retrieve_user_score.desc, statistics.retrieve_user_score.time );
     console.log( "%s: %d ns", statistics.alter_user_score.desc, statistics.alter_user_score.time );
     console.log( "%s: %d ns (N = %d )", statistics.top_n.desc, statistics.top_n.time, statistics.top_n.n);
-    console.log( "%s - %s: %d ns", statistics.ranking.desc, statistics.ranking.user, statistics.ranking.time);
+    console.log( "%s: %d ns", statistics.ranking.desc, statistics.ranking.time);
     console.log();
     console.log("NODE - MEMORY USAGE");
     console.log("rss (min,max,avg) in bytes: (%d, %d, %d) ",

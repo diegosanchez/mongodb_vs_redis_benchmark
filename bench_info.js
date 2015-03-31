@@ -1,6 +1,6 @@
 var info = {
     ranking: {
-        desc: 'ranking for user',
+        desc: 'time spent retreaving user\'s ranking',
         user: 'user_1',
         time: 0,
         rank: 0

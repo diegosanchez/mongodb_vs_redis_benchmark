@@ -147,7 +147,6 @@ function retrieve_ranking(next) {
                 if ( entry === null)
                     return;
 
-                console.log(entry._id, foundEntry._id, entry._id.equals(foundEntry._id) );
                 if ( entry._id.equals(foundEntry._id)) {
                     var elapsed = process.hrtime(timer);
                     statistics.ranking.rank = ranking;
